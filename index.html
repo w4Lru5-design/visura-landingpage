@@ -1,0 +1,553 @@
+import React, { useState, useEffect } from "react";
+
+// The data is now expected to be imported from elsewhere
+// import { signatureStyles, defaultParameters, options, tooltips } from './your-data-file'; 
+
+// Helper component for clickable descriptions
+const ClickableDescription = ({ title, description, isSelected, onClick }) => (
+  <div style={{ cursor: "pointer" }}>
+    <label onClick={onClick} style={{ fontWeight: "bold" }}>
+      {title}
+    </label>
+    {isSelected && (
+      <div
+        style={{
+          backgroundColor: "#333",
+          padding: "10px",
+          borderRadius: "5px",
+          marginTop: "5px",
+          fontSize: "14px",
+        }}
+      >
+        {description}
+      </div>
+    )}
+  </div>
+);
+
+export default function VisuraPromptBuilder({ signatureStyles, defaultParameters, options, tooltips }) {
+  const [selectedDirector, setSelectedDirector] = useState("Wes Anderson");
+  const [form, setForm] = useState({
+    ...defaultParameters,
+    ...signatureStyles[selectedDirector],
+  });
+  const [description, setDescription] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [openTooltip, setOpenTooltip] = useState(null);
+  const [userPresets, setUserPresets] = useState({});
+  const [presetName, setPresetName] = useState("");
+
+  useEffect(() => {
+    const storedPresets = JSON.parse(localStorage.getItem("userPresets"));
+    if (storedPresets) {
+      setUserPresets(storedPresets);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("userPresets", JSON.stringify(userPresets));
+  }, [userPresets]);
+
+  useEffect(() => {
+    const newForm = {
+      ...defaultParameters,
+      ...(signatureStyles[selectedDirector] || userPresets[selectedDirector]),
+    };
+    setForm(newForm);
+    setPrompt("");
+  }, [selectedDirector, userPresets]);
+
+  useEffect(() => {
+    setPrompt("");
+  }, [description]);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleTooltip = (tooltipName) => {
+    setOpenTooltip((prev) => (prev === tooltipName ? null : tooltipName));
+  };
+
+  const createKeywordGroup = (keywords) => {
+    const allWords = keywords
+      .join(",")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const uniqueWords = [...new Set(allWords)];
+    return uniqueWords.join(", ");
+  };
+
+  const savePreset = () => {
+    if (!presetName.trim()) {
+      alert("Please give your preset a name!");
+      return;
+    }
+    if (signatureStyles[presetName]) {
+      alert("This name is already reserved for a director.");
+      return;
+    }
+
+    setUserPresets((prev) => ({
+      ...prev,
+      [presetName]: form,
+    }));
+
+    setPresetName("");
+    setSelectedDirector(presetName);
+    alert(`Preset "${presetName}" successfully saved!`);
+  };
+
+  const renderSelect = (category) => (
+    <div style={{ marginBottom: 15 }}>
+      <label
+        htmlFor={category}
+        style={{
+          display: "block",
+          marginBottom: 5,
+          textTransform: "capitalize",
+        }}
+      >
+        {category}:
+      </label>
+      <div style={{ position: "relative" }}>
+        <input
+          list={`${category}Options`}
+          id={category}
+          value={form[category]}
+          onChange={(e) => handleChange(category, e.target.value)}
+          placeholder={`Select or enter your own ${category}...`}
+          style={{
+            width: "100%",
+            padding: 8,
+            paddingRight: 35,
+            borderRadius: 5,
+            border: "none",
+            fontSize: 16,
+            backgroundColor: "#222",
+            color: "#eee",
+          }}
+        />
+        <datalist id={`${category}Options`}>
+          {options[category].map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </datalist>
+      </div>
+    </div>
+  );
+
+  const generatePrompt = () => {
+    if (!description.trim()) {
+      setPrompt("Please enter a description first.");
+      return;
+    }
+
+    const currentPreset =
+      signatureStyles[selectedDirector] || userPresets[selectedDirector];
+
+    const mainSubject = `${description}::2`;
+    const globalStyleKeywords = "cinematic, highly detailed, photorealistic";
+
+    const directorAndGenre = createKeywordGroup([
+      `${selectedDirector} style`,
+      currentPreset.additionalKeywords,
+      `${form.genre} film`,
+    ]);
+
+    const characterDetails = createKeywordGroup([
+      form.actor,
+      form.emotion,
+      form.posture,
+      form.wardrobe,
+    ]);
+
+    const environmentDetails = createKeywordGroup([
+      form.setDesign,
+      form.lighting,
+      form.imperfections,
+    ]);
+
+    const technicalDetails = createKeywordGroup([
+      form.camera,
+      form.shot,
+      form.lens,
+      form.composition,
+    ]);
+
+    let promptParts = [
+      mainSubject,
+      globalStyleKeywords,
+      directorAndGenre,
+      characterDetails,
+      environmentDetails,
+      technicalDetails,
+    ];
+
+    const finalPromptText = promptParts.filter(Boolean).join(", ");
+    let finalPrompt = `/imagine ${finalPromptText}`;
+
+    if (form.aspectRatio) finalPrompt += ` --ar ${form.aspectRatio}`;
+    if (form.stylize) finalPrompt += ` --s ${form.stylize}`;
+    if (form.chaos) finalPrompt += ` --c ${form.chaos}`;
+    if (form.repeat) finalPrompt += ` --repeat ${form.repeat}`;
+    if (form.imageWeight) finalPrompt += ` --iw ${form.imageWeight}`;
+    if (form.seed) finalPrompt += ` --seed ${form.seed}`;
+    if (form.tile) finalPrompt += ` --tile`;
+    if (form.quality) finalPrompt += ` --q ${form.quality}`;
+    if (form.upbeta) finalPrompt += ` --upbeta`;
+    if (form.uplight) finalPrompt += ` --uplight`;
+    if (form.stopEarlierAt) finalPrompt += ` --stop ${form.stopEarlierAt}`;
+
+    finalPrompt += ` --v 6`;
+    if (form.notWanted) finalPrompt += ` --no ${form.notWanted}`;
+
+    setPrompt(finalPrompt);
+  };
+
+  return (
+    <div
+      style={{
+        maxWidth: 700,
+        margin: "40px auto",
+        padding: 20,
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "#1a1a1a",
+        color: "#f0f0f0",
+        borderRadius: 10,
+      }}
+    >
+      <h1 style={{ textAlign: "center" }}>
+        Visura – Ultimate Prompt Builder for Cinematic AI
+      </h1>
+
+      <label style={{ display: "block", marginTop: 15 }}>Select Preset:</label>
+      <select
+        value={selectedDirector}
+        onChange={(e) => setSelectedDirector(e.target.value)}
+        style={{
+          width: "100%",
+          padding: 8,
+          borderRadius: 5,
+          border: "none",
+          marginBottom: 20,
+          fontSize: 16,
+          backgroundColor: "#333",
+          color: "#fff",
+        }}
+      >
+        <optgroup label="Director Presets">
+          {Object.keys(signatureStyles).map((dir) => (
+            <option key={dir} value={dir}>
+              {dir}
+            </option>
+          ))}
+        </optgroup>
+        {Object.keys(userPresets).length > 0 && (
+          <optgroup label="My Presets">
+            {Object.keys(userPresets).map((preset) => (
+              <option key={preset} value={preset}>
+                {preset}
+              </option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+
+      <div style={{ display: "flex", gap: 15, alignItems: "flex-end" }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ display: "block", marginTop: 10 }}>
+            Save New Preset:
+          </label>
+          <input
+            type="text"
+            value={presetName}
+            onChange={(e) => setPresetName(e.target.value)}
+            placeholder="Preset name"
+            style={{
+              width: "100%",
+              padding: 8,
+              borderRadius: 5,
+              border: "none",
+              fontSize: 16,
+              backgroundColor: "#222",
+              color: "#eee",
+            }}
+          />
+        </div>
+        <button
+          onClick={savePreset}
+          style={{
+            padding: 8,
+            fontSize: 16,
+            fontWeight: "bold",
+            color: "#fff",
+            backgroundColor: "#28a745",
+            border: "none",
+            borderRadius: 5,
+            cursor: "pointer",
+            marginBottom: 0,
+            whiteSpace: "nowrap",
+          }}
+        >
+          Save
+        </button>
+      </div>
+
+      <label style={{ display: "block", marginTop: 25 }}>Description:</label>
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Enter your description here..."
+        rows={4}
+        style={{
+          width: "100%",
+          padding: 10,
+          borderRadius: 5,
+          border: "none",
+          fontSize: 16,
+          backgroundColor: "#222",
+          color: "#eee",
+          resize: "vertical",
+          marginBottom: 15,
+        }}
+      />
+
+      <div style={{ display: "flex", gap: 15, marginBottom: 20 }}>
+        <div style={{ flex: 1 }}>{renderSelect("genre")}</div>
+
+        <div style={{ flex: 1 }}>{renderSelect("aspectRatio")}</div>
+      </div>
+
+      <h2 style={{ marginTop: 30 }}>Cinematic Details:</h2>
+      {renderSelect("setDesign")}
+      {renderSelect("wardrobe")}
+      {renderSelect("lighting")}
+      {renderSelect("camera")}
+      {renderSelect("lens")}
+      {renderSelect("shot")}
+      {renderSelect("composition")}
+      {renderSelect("actor")}
+      {renderSelect("emotion")}
+      {renderSelect("posture")}
+      {renderSelect("imperfections")}
+
+      <h2 style={{ marginTop: 30 }}>Midjourney Parameters:</h2>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "15px",
+          marginBottom: 20,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Chaos (--c):"
+            description={tooltips.chaos}
+            isSelected={openTooltip === "chaos"}
+            onClick={() => toggleTooltip("chaos")}
+          />
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={form.chaos}
+            onChange={(e) => handleChange("chaos", e.target.value)}
+            style={{ ...inputStyles }}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Stylize (--s):"
+            description={tooltips.stylize}
+            isSelected={openTooltip === "stylize"}
+            onClick={() => toggleTooltip("stylize")}
+          />
+          <input
+            type="number"
+            min="0"
+            max="1000"
+            value={form.stylize}
+            onChange={(e) => handleChange("stylize", e.target.value)}
+            style={{ ...inputStyles }}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Quality (--q):"
+            description={tooltips.quality}
+            isSelected={openTooltip === "quality"}
+            onClick={() => toggleTooltip("quality")}
+          />
+          <input
+            type="number"
+            step="0.25"
+            min="0.25"
+            max="1"
+            value={form.quality}
+            onChange={(e) => handleChange("quality", e.target.value)}
+            style={{ ...inputStyles }}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Seed (--seed):"
+            description={tooltips.seed}
+            isSelected={openTooltip === "seed"}
+            onClick={() => toggleTooltip("seed")}
+          />
+          <input
+            type="number"
+            value={form.seed || ""}
+            onChange={(e) => handleChange("seed", e.target.value)}
+            placeholder="Random"
+            style={{ ...inputStyles }}
+          />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <input
+            type="checkbox"
+            id="tile"
+            checked={form.tile}
+            onChange={(e) => handleChange("tile", e.target.checked)}
+            style={{ ...checkboxStyles }}
+          />
+          <ClickableDescription
+            title="Tile (--tile)"
+            description={tooltips.tile}
+            isSelected={openTooltip === "tile"}
+            onClick={() => toggleTooltip("tile")}
+          />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <input
+            type="checkbox"
+            id="upbeta"
+            checked={form.upbeta}
+            onChange={(e) => handleChange("upbeta", e.target.checked)}
+            style={{ ...checkboxStyles }}
+          />
+          <ClickableDescription
+            title="Upbeta (--upbeta)"
+            description={tooltips.upbeta}
+            isSelected={openTooltip === "upbeta"}
+            onClick={() => toggleTooltip("upbeta")}
+          />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <input
+            type="checkbox"
+            id="uplight"
+            checked={form.uplight}
+            onChange={(e) => handleChange("uplight", e.target.checked)}
+            style={{ ...checkboxStyles }}
+          />
+          <ClickableDescription
+            title="Uplight (--uplight)"
+            description={tooltips.uplight}
+            isSelected={openTooltip === "uplight"}
+            onClick={() => toggleTooltip("uplight")}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Stop Earlier At (--stop):"
+            description={tooltips.stopEarlierAt}
+            isSelected={openTooltip === "stopEarlierAt"}
+            onClick={() => toggleTooltip("stopEarlierAt")}
+          />
+          <input
+            type="number"
+            min="10"
+            max="100"
+            value={form.stopEarlierAt || ""}
+            onChange={(e) => handleChange("stopEarlierAt", e.target.value)}
+            placeholder="10 - 100"
+            style={{ ...inputStyles }}
+          />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <ClickableDescription
+            title="Image Weight (--iw):"
+            description={tooltips.imageWeight}
+            isSelected={openTooltip === "imageWeight"}
+            onClick={() => toggleTooltip("imageWeight")}
+          />
+          <input
+            type="number"
+            min="0"
+            max="2"
+            step="0.1"
+            value={form.imageWeight}
+            onChange={(e) => handleChange("imageWeight", e.target.value)}
+            placeholder="0.5"
+            style={{ ...inputStyles }}
+          />
+        </div>
+      </div>
+
+      <button
+        onClick={generatePrompt}
+        style={{
+          marginTop: 20,
+          width: "100%",
+          padding: 12,
+          fontSize: 18,
+          fontWeight: "bold",
+          color: "#fff",
+          backgroundColor: "#007bff",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+      >
+        Generate Prompt
+      </button>
+
+      {prompt && (
+        <pre
+          style={{
+            marginTop: 25,
+            backgroundColor: "#222",
+            padding: 15,
+            borderRadius: 8,
+            fontSize: 15,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            color: "#0f0",
+          }}
+        >
+          {prompt}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+const inputStyles = {
+  width: "100%",
+  padding: 8,
+  borderRadius: 5,
+  border: "none",
+  fontSize: 16,
+  backgroundColor: "#222",
+  color: "#eee",
+  marginTop: 5,
+};
+
+const checkboxStyles = {
+  width: "20px",
+  height: "20px",
+};
