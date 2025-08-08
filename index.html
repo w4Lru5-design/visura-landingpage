@@ -1,553 +1,1264 @@
-import React, { useState, useEffect } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visura - Ultimate Prompt Generator for Cinematic AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-// The data is now expected to be imported from elsewhere
-// import { signatureStyles, defaultParameters, options, tooltips } from './your-data-file'; 
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0f0f23, #1a1a3a);
+            color: #ffffff;
+            line-height: 1.6;
+        }
 
-// Helper component for clickable descriptions
-const ClickableDescription = ({ title, description, isSelected, onClick }) => (
-  <div style={{ cursor: "pointer" }}>
-    <label onClick={onClick} style={{ fontWeight: "bold" }}>
-      {title}
-    </label>
-    {isSelected && (
-      <div
-        style={{
-          backgroundColor: "#333",
-          padding: "10px",
-          borderRadius: "5px",
-          marginTop: "5px",
-          fontSize: "14px",
-        }}
-      >
-        {description}
-      </div>
-    )}
-  </div>
-);
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #2d1b69 100%);
+            position: relative;
+            overflow: hidden;
+        }
 
-export default function VisuraPromptBuilder({ signatureStyles, defaultParameters, options, tooltips }) {
-  const [selectedDirector, setSelectedDirector] = useState("Wes Anderson");
-  const [form, setForm] = useState({
-    ...defaultParameters,
-    ...signatureStyles[selectedDirector],
-  });
-  const [description, setDescription] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [openTooltip, setOpenTooltip] = useState(null);
-  const [userPresets, setUserPresets] = useState({});
-  const [presetName, setPresetName] = useState("");
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
 
-  useEffect(() => {
-    const storedPresets = JSON.parse(localStorage.getItem("userPresets"));
-    if (storedPresets) {
-      setUserPresets(storedPresets);
-    }
-  }, []);
+        .hero-content {
+            max-width: 800px;
+            z-index: 1;
+        }
 
-  useEffect(() => {
-    localStorage.setItem("userPresets", JSON.stringify(userPresets));
-  }, [userPresets]);
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
 
-  useEffect(() => {
-    const newForm = {
-      ...defaultParameters,
-      ...(signatureStyles[selectedDirector] || userPresets[selectedDirector]),
-    };
-    setForm(newForm);
-    setPrompt("");
-  }, [selectedDirector, userPresets]);
+        @keyframes glow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.2); }
+        }
 
-  useEffect(() => {
-    setPrompt("");
-  }, [description]);
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            color: #b8b8d1;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: #ffffff;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+            margin-bottom: 2rem;
+        }
 
-  const toggleTooltip = (tooltipName) => {
-    setOpenTooltip((prev) => (prev === tooltipName ? null : tooltipName));
-  };
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.4);
+        }
 
-  const createKeywordGroup = (keywords) => {
-    const allWords = keywords
-      .join(",")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const uniqueWords = [...new Set(allWords)];
-    return uniqueWords.join(", ");
-  };
+        /* How It Works Section */
+        .how-it-works {
+            padding: 5rem 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+        }
 
-  const savePreset = () => {
-    if (!presetName.trim()) {
-      alert("Please give your preset a name!");
-      return;
-    }
-    if (signatureStyles[presetName]) {
-      alert("This name is already reserved for a director.");
-      return;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    setUserPresets((prev) => ({
-      ...prev,
-      [presetName]: form,
-    }));
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #ffffff;
+        }
 
-    setPresetName("");
-    setSelectedDirector(presetName);
-    alert(`Preset "${presetName}" successfully saved!`);
-  };
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
 
-  const renderSelect = (category) => (
-    <div style={{ marginBottom: 15 }}>
-      <label
-        htmlFor={category}
-        style={{
-          display: "block",
-          marginBottom: 5,
-          textTransform: "capitalize",
-        }}
-      >
-        {category}:
-      </label>
-      <div style={{ position: "relative" }}>
-        <input
-          list={`${category}Options`}
-          id={category}
-          value={form[category]}
-          onChange={(e) => handleChange(category, e.target.value)}
-          placeholder={`Select or enter your own ${category}...`}
-          style={{
-            width: "100%",
-            padding: 8,
-            paddingRight: 35,
-            borderRadius: 5,
-            border: "none",
-            fontSize: 16,
-            backgroundColor: "#222",
-            color: "#eee",
-          }}
-        />
-        <datalist id={`${category}Options`}>
-          {options[category].map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </datalist>
-      </div>
-    </div>
-  );
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
 
-  const generatePrompt = () => {
-    if (!description.trim()) {
-      setPrompt("Please enter a description first.");
-      return;
-    }
+        .step:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
 
-    const currentPreset =
-      signatureStyles[selectedDirector] || userPresets[selectedDirector];
+        .step-number {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            font-weight: bold;
+            line-height: 60px;
+            margin-bottom: 1rem;
+        }
 
-    const mainSubject = `${description}::2`;
-    const globalStyleKeywords = "cinematic, highly detailed, photorealistic";
+        .step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
 
-    const directorAndGenre = createKeywordGroup([
-      `${selectedDirector} style`,
-      currentPreset.additionalKeywords,
-      `${form.genre} film`,
-    ]);
+        .step p {
+            color: #b8b8d1;
+            font-size: 1rem;
+        }
 
-    const characterDetails = createKeywordGroup([
-      form.actor,
-      form.emotion,
-      form.posture,
-      form.wardrobe,
-    ]);
+        /* Generator Section */
+        .generator-section {
+            padding: 3rem 2rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
 
-    const environmentDetails = createKeywordGroup([
-      form.setDesign,
-      form.lighting,
-      form.imperfections,
-    ]);
+        .generator-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
 
-    const technicalDetails = createKeywordGroup([
-      form.camera,
-      form.shot,
-      form.lens,
-      form.composition,
-    ]);
+        /* Footer */
+        .footer {
+            padding: 2rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-    let promptParts = [
-      mainSubject,
-      globalStyleKeywords,
-      directorAndGenre,
-      characterDetails,
-      environmentDetails,
-      technicalDetails,
-    ];
+        .footer p {
+            color: #b8b8d1;
+            font-size: 0.9rem;
+        }
 
-    const finalPromptText = promptParts.filter(Boolean).join(", ");
-    let finalPrompt = `/imagine ${finalPromptText}`;
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
 
-    if (form.aspectRatio) finalPrompt += ` --ar ${form.aspectRatio}`;
-    if (form.stylize) finalPrompt += ` --s ${form.stylize}`;
-    if (form.chaos) finalPrompt += ` --c ${form.chaos}`;
-    if (form.repeat) finalPrompt += ` --repeat ${form.repeat}`;
-    if (form.imageWeight) finalPrompt += ` --iw ${form.imageWeight}`;
-    if (form.seed) finalPrompt += ` --seed ${form.seed}`;
-    if (form.tile) finalPrompt += ` --tile`;
-    if (form.quality) finalPrompt += ` --q ${form.quality}`;
-    if (form.upbeta) finalPrompt += ` --upbeta`;
-    if (form.uplight) finalPrompt += ` --uplight`;
-    if (form.stopEarlierAt) finalPrompt += ` --stop ${form.stopEarlierAt}`;
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
 
-    finalPrompt += ` --v 6`;
-    if (form.notWanted) finalPrompt += ` --no ${form.notWanted}`;
+        .scroll-arrow {
+            font-size: 2rem;
+            color: #4ecdc4;
+        }
 
-    setPrompt(finalPrompt);
-  };
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero {
+                min-height: 90vh;
+                padding: 1rem;
+            }
 
-  return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: "40px auto",
-        padding: 20,
-        fontFamily: "Arial, sans-serif",
-        backgroundColor: "#1a1a1a",
-        color: "#f0f0f0",
-        borderRadius: 10,
-      }}
-    >
-      <h1 style={{ textAlign: "center" }}>
-        Visura – Ultimate Prompt Builder for Cinematic AI
-      </h1>
+            .hero h1 {
+                font-size: 2.5rem;
+            }
 
-      <label style={{ display: "block", marginTop: 15 }}>Select Preset:</label>
-      <select
-        value={selectedDirector}
-        onChange={(e) => setSelectedDirector(e.target.value)}
-        style={{
-          width: "100%",
-          padding: 8,
-          borderRadius: 5,
-          border: "none",
-          marginBottom: 20,
-          fontSize: 16,
-          backgroundColor: "#333",
-          color: "#fff",
-        }}
-      >
-        <optgroup label="Director Presets">
-          {Object.keys(signatureStyles).map((dir) => (
-            <option key={dir} value={dir}>
-              {dir}
-            </option>
-          ))}
-        </optgroup>
-        {Object.keys(userPresets).length > 0 && (
-          <optgroup label="My Presets">
-            {Object.keys(userPresets).map((preset) => (
-              <option key={preset} value={preset}>
-                {preset}
-              </option>
-            ))}
-          </optgroup>
-        )}
-      </select>
+            .hero p {
+                font-size: 1.1rem;
+            }
 
-      <div style={{ display: "flex", gap: 15, alignItems: "flex-end" }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ display: "block", marginTop: 10 }}>
-            Save New Preset:
-          </label>
-          <input
-            type="text"
-            value={presetName}
-            onChange={(e) => setPresetName(e.target.value)}
-            placeholder="Preset name"
-            style={{
-              width: "100%",
-              padding: 8,
-              borderRadius: 5,
-              border: "none",
-              fontSize: 16,
-              backgroundColor: "#222",
-              color: "#eee",
-            }}
-          />
+            .steps {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .how-it-works {
+                padding: 3rem 1rem;
+            }
+
+            .generator-section {
+                padding: 2rem 1rem;
+            }
+        }
+
+        /* Custom styles for the embedded generator */
+        .visura-generator {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            max-width: none !important;
+        }
+
+        .visura-generator h1 {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Visura</h1>
+            <p>The Ultimate Prompt Generator for Cinematic AI.<br>
+               Create stunning, movie-quality images with Midjourney.<br>
+               <strong>Precise. Intuitive. By filmmakers for filmmakers.</strong></p>
+            <a href="#generator" class="cta-button">Start Creating Now - Free</a>
+            
+            <div class="scroll-indicator">
+                <div class="scroll-arrow">↓</div>
+            </div>
         </div>
-        <button
-          onClick={savePreset}
-          style={{
-            padding: 8,
-            fontSize: 16,
-            fontWeight: "bold",
-            color: "#fff",
-            backgroundColor: "#28a745",
-            border: "none",
-            borderRadius: 5,
-            cursor: "pointer",
-            marginBottom: 0,
-            whiteSpace: "nowrap",
-          }}
-        >
-          Save
-        </button>
-      </div>
+    </section>
 
-      <label style={{ display: "block", marginTop: 25 }}>Description:</label>
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        placeholder="Enter your description here..."
-        rows={4}
-        style={{
-          width: "100%",
-          padding: 10,
-          borderRadius: 5,
-          border: "none",
-          fontSize: 16,
-          backgroundColor: "#222",
-          color: "#eee",
-          resize: "vertical",
-          marginBottom: 15,
-        }}
-      />
-
-      <div style={{ display: "flex", gap: 15, marginBottom: 20 }}>
-        <div style={{ flex: 1 }}>{renderSelect("genre")}</div>
-
-        <div style={{ flex: 1 }}>{renderSelect("aspectRatio")}</div>
-      </div>
-
-      <h2 style={{ marginTop: 30 }}>Cinematic Details:</h2>
-      {renderSelect("setDesign")}
-      {renderSelect("wardrobe")}
-      {renderSelect("lighting")}
-      {renderSelect("camera")}
-      {renderSelect("lens")}
-      {renderSelect("shot")}
-      {renderSelect("composition")}
-      {renderSelect("actor")}
-      {renderSelect("emotion")}
-      {renderSelect("posture")}
-      {renderSelect("imperfections")}
-
-      <h2 style={{ marginTop: 30 }}>Midjourney Parameters:</h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "15px",
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Chaos (--c):"
-            description={tooltips.chaos}
-            isSelected={openTooltip === "chaos"}
-            onClick={() => toggleTooltip("chaos")}
-          />
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={form.chaos}
-            onChange={(e) => handleChange("chaos", e.target.value)}
-            style={{ ...inputStyles }}
-          />
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Choose Your Style</h3>
+                    <p>Select from legendary directors like Wes Anderson, Christopher Nolan, or Sofia Coppola. Each preset captures their unique cinematic signature.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Customize Details</h3>
+                    <p>Fine-tune camera settings, lighting, composition, and mood. Our tool gives you professional-level control over every cinematic element.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Generate & Create</h3>
+                    <p>Get a perfectly optimized Midjourney prompt. Copy it directly and watch your vision come to life with stunning, film-quality results.</p>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Stylize (--s):"
-            description={tooltips.stylize}
-            isSelected={openTooltip === "stylize"}
-            onClick={() => toggleTooltip("stylize")}
-          />
-          <input
-            type="number"
-            min="0"
-            max="1000"
-            value={form.stylize}
-            onChange={(e) => handleChange("stylize", e.target.value)}
-            style={{ ...inputStyles }}
-          />
+    <!-- Generator Section -->
+    <section class="generator-section" id="generator">
+        <div class="container">
+            <h2 class="section-title">Try It Now - Completely Free</h2>
+            <div class="generator-wrapper">
+                <div id="visura-generator-container"></div>
+            </div>
         </div>
+    </section>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Quality (--q):"
-            description={tooltips.quality}
-            isSelected={openTooltip === "quality"}
-            onClick={() => toggleTooltip("quality")}
-          />
-          <input
-            type="number"
-            step="0.25"
-            min="0.25"
-            max="1"
-            value={form.quality}
-            onChange={(e) => handleChange("quality", e.target.value)}
-            style={{ ...inputStyles }}
-          />
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Visura. Made with ❤️ for the creative community.</p>
         </div>
+    </footer>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Seed (--seed):"
-            description={tooltips.seed}
-            isSelected={openTooltip === "seed"}
-            onClick={() => toggleTooltip("seed")}
-          />
-          <input
-            type="number"
-            value={form.seed || ""}
-            onChange={(e) => handleChange("seed", e.target.value)}
-            placeholder="Random"
-            style={{ ...inputStyles }}
-          />
-        </div>
+    <!-- React and Generator Scripts -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <input
-            type="checkbox"
-            id="tile"
-            checked={form.tile}
-            onChange={(e) => handleChange("tile", e.target.checked)}
-            style={{ ...checkboxStyles }}
-          />
-          <ClickableDescription
-            title="Tile (--tile)"
-            description={tooltips.tile}
-            isSelected={openTooltip === "tile"}
-            onClick={() => toggleTooltip("tile")}
-          />
-        </div>
+    <script type="text/babel">
+        // Embedded Visura Generator Component
+        const { useState, useEffect } = React;
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <input
-            type="checkbox"
-            id="upbeta"
-            checked={form.upbeta}
-            onChange={(e) => handleChange("upbeta", e.target.checked)}
-            style={{ ...checkboxStyles }}
-          />
-          <ClickableDescription
-            title="Upbeta (--upbeta)"
-            description={tooltips.upbeta}
-            isSelected={openTooltip === "upbeta"}
-            onClick={() => toggleTooltip("upbeta")}
-          />
-        </div>
+        // All the signature styles and options from the original component
+        const signatureStyles = {
+          "Wes Anderson": {
+            genre: "Drama",
+            aspectRatio: "21:9",
+            camera: "Arri Alexa, 35mm film",
+            shot: "Symmetrical, tableau-style shot",
+            lens: "wide-angle lens",
+            composition: "Centered objects, shallow depth of field",
+            wardrobe: "Vintage suits, pastel tones",
+            actor: "Eccentric, quirky body language",
+            emotion: "Melancholy, nostalgia",
+            posture: "Symmetrical, upright posture",
+            setDesign: "Storybook-like sets, intricate detailing",
+            lighting: "Soft, diffuse lighting, flat lighting",
+            imperfections: "Light dust particles, subtle grain",
+            notWanted: "Disorder, chaotic movements, oversaturated colors",
+            stylize: 250,
+            chaos: 15,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "deadpan, distinctive color palette",
+          },
+          "The Coen Brothers": {
+            genre: "Crime",
+            aspectRatio: "1.85:1",
+            camera: "Steady cam, 35mm film",
+            shot: "Naturalistic framing, tracking shot",
+            lens: "35mm prime lens",
+            composition: "Wide shot, detailed landscapes",
+            wardrobe: "Everyday clothing, muted colors, flannel shirts",
+            actor: "Deadpan expressions, minimal movement",
+            emotion: "Dry humor, underlying tension",
+            posture: "Casual, relaxed posture",
+            setDesign: "Rustic interiors, small town America",
+            lighting: "Soft shadows, overcast daylight",
+            imperfections: "Minor dirt, subtle wear, visible film grain",
+            notWanted: "Overacting, bright colors, clean compositions",
+            stylize: 100,
+            chaos: 30,
+            quality: 1,
+            imageWeight: 0.25,
+            additionalKeywords: null,
+          },
+          "Alfred Hitchcock": {
+            genre: "Thriller",
+            aspectRatio: "4:3",
+            camera: "Suspenseful framing",
+            shot: "Tight close-ups, vertiginous dolly zoom",
+            lens: "wide-angle lens",
+            composition: "Shadowy corners, high contrast",
+            wardrobe: "Classic suits, vintage dresses",
+            actor: "Tense facial expressions, controlled gestures",
+            emotion: "Suspense, anxiety",
+            posture: "Rigid, alert posture",
+            setDesign: "Victorian interiors, isolated locations",
+            lighting: "High contrast, chiaroscuro",
+            imperfections: "Film grain, slight blur",
+            notWanted: "Bright light, casual settings, empty frames",
+            stylize: 50,
+            chaos: 5,
+            quality: 1,
+            imageWeight: 0.7,
+            additionalKeywords: "master of suspense",
+          },
+          "Denis Villeneuve": {
+            genre: "Science Fiction",
+            aspectRatio: "2.39:1",
+            camera: "Sweeping drone shots",
+            shot: "Wide landscapes, long shot",
+            lens: "anamorphic lens",
+            composition: "Futuristic architecture, minimalist composition",
+            wardrobe: "Futuristic, utilitarian",
+            actor: "Stoic, contemplative",
+            emotion: "Isolation, introspection",
+            posture: "Still, statuesque posture",
+            setDesign: "Desolate environments, brutalist architecture",
+            lighting: "Cool tones, natural light, low-key lighting",
+            imperfections: "Lens flare, subtle haze",
+            notWanted: "Bright colors, busy backgrounds, shaky camera",
+            stylize: 150,
+            chaos: 20,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "cinematography by Roger Deakins",
+          },
+          "Roy Andersson": {
+            genre: "Drama",
+            aspectRatio: "1.85:1",
+            camera: "Static, tableau-style shots",
+            shot: "Static, tableau-style shots",
+            lens: "wide-angle lens",
+            composition: "Sparse rooms, deep focus",
+            wardrobe: "Plain, timeless clothes",
+            actor: "Expressionless faces",
+            emotion: "Absurdity, melancholy",
+            posture: "Rigid, posed posture",
+            setDesign: "Sparse rooms, muted palette",
+            lighting: "Flat, even lighting",
+            imperfections: "Visible film texture",
+            notWanted: "Dynamic camera, vibrant colors, close-ups",
+            stylize: 80,
+            chaos: 10,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "long takes, deadpan acting",
+          },
+          "Christopher Nolan": {
+            genre: "Thriller",
+            aspectRatio: "2.35:1",
+            camera: "IMAX film camera",
+            shot: "Dynamic angles, tracking shot",
+            lens: "IMAX film lens",
+            composition: "Urban settings, sleek interiors",
+            wardrobe: "Modern casual, professional suits",
+            actor: "Intense, focused expressions",
+            emotion: "Tension, urgency",
+            posture: "Engaged, purposeful posture",
+            setDesign: "Urban settings, geometric patterns",
+            lighting: "Strong contrast, cinematic lighting",
+            imperfections: "Minimal grain, razor sharp focus",
+            notWanted: "Soft focus, pastel colors, shaky cam",
+            stylize: 200,
+            chaos: 10,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: null,
+          },
+          "Greta Gerwig": {
+            genre: "Comedy",
+            aspectRatio: "16:9",
+            camera: "Handheld camera",
+            shot: "Expressive, natural movements",
+            lens: "prime lens",
+            composition: "Cozy apartments, bright rooms",
+            wardrobe: "Casual, modern vintage",
+            actor: "Expressive, natural movements",
+            emotion: "Warmth, vulnerability",
+            posture: "Relaxed, informal posture",
+            setDesign: "Cozy apartments, cluttered rooms",
+            lighting: "Soft, warm light, natural lighting",
+            imperfections: "Natural skin textures",
+            notWanted: "Harsh shadows, artificial setups",
+            stylize: 120,
+            chaos: 25,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "mumblecore aesthetics",
+          },
+          "Quentin Tarantino": {
+            genre: "Crime",
+            aspectRatio: "2.39:1",
+            camera: "Dynamic tracking shots",
+            shot: "Close-ups, POV shot",
+            lens: "Anamorphic lens",
+            composition: "Retro diners, eclectic interiors",
+            wardrobe: "Bold, retro styles, iconic suits",
+            actor: "Expressive, theatrical",
+            emotion: "Intensity, dark humor",
+            posture: "Confident, aggressive posture",
+            setDesign: "Retro diners, vibrant interiors",
+            lighting: "Vibrant colors, dramatic lighting",
+            imperfections: "Vintage film grain and scratches",
+            notWanted: "Soft lighting, muted colors",
+            stylize: 150,
+            chaos: 35,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "pulp fiction aesthetics",
+          },
+          "Sofia Coppola": {
+            genre: "Drama",
+            aspectRatio: "1.66:1",
+            camera: "Soft focus, dreamy framing",
+            shot: "Long shot, pensive portraits",
+            lens: "prime lens",
+            composition: "Minimalist interiors, natural elements",
+            wardrobe: "Elegant, minimalistic",
+            actor: "Subtle expressions, introspective",
+            emotion: "Melancholy, nostalgia",
+            posture: "Graceful, poised posture",
+            setDesign: "Minimalist interiors, luxury hotels",
+            lighting: "Natural light, pastel tones",
+            imperfections: "Soft grain, film halation",
+            notWanted: "Harsh contrasts, busy scenes, oversaturated colors",
+            stylize: 200,
+            chaos: 10,
+            quality: 1,
+            imageWeight: 0.5,
+            additionalKeywords: "ethereal aesthetics",
+          },
+        };
 
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <input
-            type="checkbox"
-            id="uplight"
-            checked={form.uplight}
-            onChange={(e) => handleChange("uplight", e.target.checked)}
-            style={{ ...checkboxStyles }}
-          />
-          <ClickableDescription
-            title="Uplight (--uplight)"
-            description={tooltips.uplight}
-            isSelected={openTooltip === "uplight"}
-            onClick={() => toggleTooltip("uplight")}
-          />
-        </div>
+        const defaultParameters = {
+          genre: "Fantasy",
+          aspectRatio: "16:9",
+          camera: "",
+          lens: "",
+          composition: "",
+          shot: "",
+          actor: "",
+          emotion: "",
+          posture: "",
+          wardrobe: "",
+          setDesign: "",
+          lighting: "",
+          imperfections: "",
+          notWanted: "",
+          additionalKeywords: null,
+          repeat: null,
+          chaos: 0,
+          imageWeight: 0.5,
+          stylize: 100,
+          seed: null,
+          tile: false,
+          quality: 1,
+          upbeta: false,
+          uplight: false,
+          stopEarlierAt: null,
+        };
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Stop Earlier At (--stop):"
-            description={tooltips.stopEarlierAt}
-            isSelected={openTooltip === "stopEarlierAt"}
-            onClick={() => toggleTooltip("stopEarlierAt")}
-          />
-          <input
-            type="number"
-            min="10"
-            max="100"
-            value={form.stopEarlierAt || ""}
-            onChange={(e) => handleChange("stopEarlierAt", e.target.value)}
-            placeholder="10 - 100"
-            style={{ ...inputStyles }}
-          />
-        </div>
+        const options = {
+          genre: [
+            "Action", "Adventure", "Animation", "Biography", "Comedy", "Crime",
+            "Documentary", "Drama", "Family", "Fantasy", "Film Noir", "History",
+            "Horror", "Musical", "Mystery", "Romance", "Science Fiction",
+            "Sport", "Thriller", "War", "Western",
+          ],
+          aspectRatio: [
+            "16:9", "1:1", "4:3", "3:2", "21:9", "2.35:1", "2.39:1", "1.85:1", "1.33:1", "9:16",
+          ],
+          shot: [
+            "Extreme Close-up", "Close-up", "Medium Shot", "Wide Shot", "Long Shot",
+            "Establishing Shot", "Point-of-View (POV)", "Over-the-Shoulder Shot", "Two Shot",
+            "Dutch Angle", "Low Angle", "High Angle", "Bird's-Eye View", "Worm's-Eye View",
+            "Tracking Shot", "Pan Shot", "Tilt Shot", "Dolly Shot", "Zoom Shot",
+            "Handheld", "Steadicam", "Drone Shot", "Symmetrical, tableau-style shot",
+          ],
+          camera: [
+            "Arri Alexa 65 with Kodak Vision3 500T", "Arricam 35mm with Fujifilm Eterna 500T",
+            "Arri Standard 16mm with cross-processed film", "Super 8 Kodak Ektachrome",
+            "RED Weapon 8K Helium", "Blackmagic Pocket Cinema Camera 6K", "Canon C300 Mark III",
+            "Sony FX9 with Venice color science", "Film grain texture 35mm Kodak",
+            "Vintage Bolex 16mm handheld", "IMAX film camera",
+          ],
+          lens: [
+            "Zeiss Master Prime 50mm T1.3", "Cooke S4/i Anamorphic 40mm",
+            "Kubrick's Zeiss Planar 50mm f/0.7", "Canon K35 vintage spherical 85mm",
+            "Panavision Ultra Vista anamorphic", "Leica Summicron-C 35mm T2.0",
+            "Angenieux Optimo zoom 24-290mm", "Hawk V-Lite anamorphic 1.3x",
+            "Sigma Cine FF High Speed 24mm T1.5", "Vintage Bausch & Lomb Super Baltars",
+            "IMAX film lens", "wide-angle lens", "prime lens", "anamorphic lens",
+          ],
+          composition: [
+            "Central perspective symmetrical framing", "Rule of thirds with leading lines",
+            "Dutch angle tilted horizon", "Golden ratio spiral composition",
+            "Worm's eye view low angle", "Bird's eye view overhead shot",
+            "Foreground-midground-background depth", "Negative space minimalist framing",
+            "Frame within frame composition", "Dynamic diagonal composition",
+            "Centered objects, shallow depth of field", "Shadowy corners, high contrast",
+            "Sparse rooms, deep focus", "Urban settings, sleek interiors",
+          ],
+          actor: [
+            "Eccentric, quirky body language", "Deadpan expressions, minimal movement",
+            "Tense facial expressions, controlled gestures", "Stoic, contemplative",
+            "Expressionless faces", "Intense, focused expressions",
+            "Expressive, natural movements", "Subtle expressions, introspective",
+            "Expressive, theatrical",
+          ],
+          emotion: [
+            "Melancholy, nostalgia", "Dry humor, underlying tension", "Suspense, anxiety",
+            "Isolation, introspection", "Warmth, vulnerability", "Intensity, dark humor",
+          ],
+          posture: [
+            "Symmetrical, upright posture", "Casual, relaxed posture", "Rigid, alert posture",
+            "Still, statuesque posture", "Relaxed, informal posture",
+            "Confident, aggressive posture", "Engaged, purposeful posture",
+            "Graceful, poised posture",
+          ],
+          wardrobe: [
+            "Vintage suits, pastel tones", "Everyday clothing, muted colors",
+            "Classic suits, vintage dresses", "Futuristic, utilitarian",
+            "Bold, retro styles", "Modern casual, professional suits", "Plain, timeless clothes",
+          ],
+          setDesign: [
+            "Storybook-like sets, intricate detailing", "Rustic interiors, small town America",
+            "Victorian interiors, isolated locations", "Desolate environments, brutalist architecture",
+            "Cozy apartments, cluttered rooms", "Urban settings, geometric patterns",
+            "Retro diners, vibrant interiors", "Minimalist interiors, luxury hotels",
+          ],
+          lighting: [
+            "Soft, diffuse lighting, flat lighting", "Soft shadows, overcast daylight",
+            "High contrast, chiaroscuro", "Cool tones, natural light, low-key lighting",
+            "Soft, warm light, natural lighting", "Vibrant colors, dramatic lighting",
+            "Strong contrast, cinematic lighting",
+          ],
+          imperfections: [
+            "Light dust particles, subtle grain", "Minor dirt, subtle wear, visible film grain",
+            "Film grain, slight blur", "Lens flare, subtle haze", "Natural skin textures",
+            "Vintage film grain and scratches", "Minimal grain, razor sharp focus",
+            "Soft grain, film halation",
+          ],
+          notWanted: [
+            "Disorder, chaotic movements, oversaturated colors",
+            "Overacting, bright colors, clean compositions",
+            "Bright light, casual settings, empty frames",
+            "Bright colors, busy backgrounds, shaky camera",
+            "Dynamic camera, vibrant colors, close-ups",
+            "Soft focus, pastel colors, shaky cam", "Harsh shadows, artificial setups",
+            "Soft lighting, muted colors", "Harsh contrasts, busy scenes, oversaturated colors",
+          ],
+        };
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <ClickableDescription
-            title="Image Weight (--iw):"
-            description={tooltips.imageWeight}
-            isSelected={openTooltip === "imageWeight"}
-            onClick={() => toggleTooltip("imageWeight")}
-          />
-          <input
-            type="number"
-            min="0"
-            max="2"
-            step="0.1"
-            value={form.imageWeight}
-            onChange={(e) => handleChange("imageWeight", e.target.value)}
-            placeholder="0.5"
-            style={{ ...inputStyles }}
-          />
-        </div>
-      </div>
+        function VisuraGenerator() {
+          const [selectedDirector, setSelectedDirector] = useState("Wes Anderson");
+          const [form, setForm] = useState({
+            ...defaultParameters,
+            ...signatureStyles[selectedDirector],
+          });
+          const [description, setDescription] = useState("");
+          const [prompt, setPrompt] = useState("");
+          const [userPresets, setUserPresets] = useState({});
+          const [presetName, setPresetName] = useState("");
+          const [copySuccess, setCopySuccess] = useState(false);
 
-      <button
-        onClick={generatePrompt}
-        style={{
-          marginTop: 20,
-          width: "100%",
-          padding: 12,
-          fontSize: 18,
-          fontWeight: "bold",
-          color: "#fff",
-          backgroundColor: "#007bff",
-          border: "none",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-      >
-        Generate Prompt
-      </button>
+          useEffect(() => {
+            const newForm = {
+              ...defaultParameters,
+              ...(signatureStyles[selectedDirector] || userPresets[selectedDirector]),
+            };
+            setForm(newForm);
+            setPrompt("");
+          }, [selectedDirector, userPresets]);
 
-      {prompt && (
-        <pre
-          style={{
-            marginTop: 25,
-            backgroundColor: "#222",
-            padding: 15,
-            borderRadius: 8,
-            fontSize: 15,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            color: "#0f0",
-          }}
-        >
-          {prompt}
-        </pre>
-      )}
-    </div>
-  );
-}
+          useEffect(() => {
+            setPrompt("");
+          }, [description]);
 
-const inputStyles = {
-  width: "100%",
-  padding: 8,
-  borderRadius: 5,
-  border: "none",
-  fontSize: 16,
-  backgroundColor: "#222",
-  color: "#eee",
-  marginTop: 5,
-};
+          const handleChange = (field, value) => {
+            setForm((prev) => ({ ...prev, [field]: value }));
+          };
 
-const checkboxStyles = {
-  width: "20px",
-  height: "20px",
-};
+          const createKeywordGroup = (keywords) => {
+            const allWords = keywords
+              .join(",")
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const uniqueWords = [...new Set(allWords)];
+            return uniqueWords.join(", ");
+          };
+
+          const copyToClipboard = async () => {
+            try {
+              await navigator.clipboard.writeText(prompt);
+              setCopySuccess(true);
+              setTimeout(() => setCopySuccess(false), 2000);
+            } catch (err) {
+              console.error('Failed to copy text: ', err);
+            }
+          };
+
+          const savePreset = () => {
+            if (!presetName.trim()) {
+              alert("Please give your preset a name!");
+              return;
+            }
+            if (signatureStyles[presetName]) {
+              alert("This name is already reserved for a director.");
+              return;
+            }
+
+            setUserPresets((prev) => ({
+              ...prev,
+              [presetName]: form,
+            }));
+
+            setPresetName("");
+            setSelectedDirector(presetName);
+            alert(`Preset "${presetName}" successfully saved!`);
+          };
+
+          const renderSelect = (category) => (
+            React.createElement('div', { style: { marginBottom: 15 } }, [
+              React.createElement('label', {
+                key: 'label',
+                htmlFor: category,
+                style: {
+                  display: "block",
+                  marginBottom: 5,
+                  textTransform: "capitalize",
+                  color: "#ffffff"
+                }
+              }, category + ":"),
+              React.createElement('div', {
+                key: 'input-container',
+                style: { position: "relative", display: "flex", gap: 5 }
+              }, [
+                React.createElement('input', {
+                  key: 'input',
+                  id: category,
+                  value: form[category],
+                  onChange: (e) => handleChange(category, e.target.value),
+                  placeholder: `Enter your own ${category}...`,
+                  style: {
+                    flex: 1,
+                    padding: 8,
+                    borderRadius: 5,
+                    border: "none",
+                    fontSize: 16,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                  }
+                }),
+                React.createElement('select', {
+                  key: 'select',
+                  onChange: (e) => {
+                    if (e.target.value) {
+                      handleChange(category, e.target.value);
+                      e.target.value = ""; // Reset dropdown
+                    }
+                  },
+                  style: {
+                    padding: 8,
+                    borderRadius: 5,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#333",
+                    color: "#eee",
+                    cursor: "pointer",
+                    minWidth: "120px",
+                  }
+                }, [
+                  React.createElement('option', { key: 'default', value: "" }, "Select preset..."),
+                  ...(options[category] ? options[category].map((opt) =>
+                    React.createElement('option', { key: opt, value: opt },
+                      opt.length > 20 ? opt.substring(0, 17) + "..." : opt
+                    )
+                  ) : [])
+                ])
+              ])
+            ])
+          );
+
+          const generatePrompt = () => {
+            if (!description.trim()) {
+              setPrompt("Please enter a description first.");
+              return;
+            }
+
+            const currentPreset =
+              signatureStyles[selectedDirector] || userPresets[selectedDirector];
+
+            const mainSubject = `${description}::2`;
+            const globalStyleKeywords = "cinematic, highly detailed, photorealistic";
+
+            const isUserPreset = !signatureStyles[selectedDirector] && userPresets[selectedDirector];
+            
+            const directorAndGenre = createKeywordGroup([
+              isUserPreset ? null : `${selectedDirector} style`,
+              currentPreset.additionalKeywords,
+              `${form.genre} film`,
+            ]);
+
+            const characterDetails = createKeywordGroup([
+              form.actor,
+              form.emotion,
+              form.posture,
+              form.wardrobe,
+            ]);
+
+            const environmentDetails = createKeywordGroup([
+              form.setDesign,
+              form.lighting,
+              form.imperfections,
+            ]);
+
+            const technicalDetails = createKeywordGroup([
+              form.camera,
+              form.shot,
+              form.lens,
+              form.composition,
+            ]);
+
+            let promptParts = [
+              mainSubject,
+              globalStyleKeywords,
+              directorAndGenre,
+              characterDetails,
+              environmentDetails,
+              technicalDetails,
+            ];
+
+            const finalPromptText = promptParts.filter(Boolean).join(", ");
+            let finalPrompt = finalPromptText;
+
+            if (form.aspectRatio) finalPrompt += ` --ar ${form.aspectRatio}`;
+            if (form.stylize) finalPrompt += ` --s ${form.stylize}`;
+            if (form.chaos) finalPrompt += ` --c ${form.chaos}`;
+            if (form.repeat) finalPrompt += ` --repeat ${form.repeat}`;
+            if (form.imageWeight) finalPrompt += ` --iw ${form.imageWeight}`;
+            if (form.seed) finalPrompt += ` --seed ${form.seed}`;
+            if (form.tile) finalPrompt += ` --tile`;
+            if (form.quality) finalPrompt += ` --q ${form.quality}`;
+            if (form.upbeta) finalPrompt += ` --upbeta`;
+            if (form.uplight) finalPrompt += ` --uplight`;
+            if (form.stopEarlierAt) finalPrompt += ` --stop ${form.stopEarlierAt}`;
+
+            finalPrompt += ` --v 6`;
+            if (form.notWanted) finalPrompt += ` --no ${form.notWanted}`;
+
+            setPrompt(finalPrompt);
+          };
+
+          return React.createElement('div', {
+            className: 'visura-generator',
+            style: {
+              padding: 20,
+              fontFamily: "Arial, sans-serif",
+              backgroundColor: "transparent",
+              color: "#f0f0f0",
+            }
+          }, [
+            // Preset Selection
+            React.createElement('label', {
+              key: 'preset-label',
+              style: { display: "block", marginTop: 15, color: "#ffffff" }
+            }, "Select Preset:"),
+            React.createElement('select', {
+              key: 'preset-select',
+              value: selectedDirector,
+              onChange: (e) => setSelectedDirector(e.target.value),
+              style: {
+                width: "100%",
+                padding: 8,
+                borderRadius: 5,
+                border: "none",
+                marginBottom: 20,
+                fontSize: 16,
+                backgroundColor: "#333",
+                color: "#fff",
+              }
+            }, [
+              React.createElement('optgroup', { key: 'directors', label: "Director Presets" },
+                Object.keys(signatureStyles).map((dir) =>
+                  React.createElement('option', { key: dir, value: dir }, dir)
+                )
+              ),
+              Object.keys(userPresets).length > 0 && React.createElement('optgroup', { key: 'user', label: "My Presets" },
+                Object.keys(userPresets).map((preset) =>
+                  React.createElement('option', { key: preset, value: preset }, preset)
+                )
+              )
+            ]),
+
+            // Save Preset
+            React.createElement('div', {
+              key: 'save-preset',
+              style: { display: "flex", gap: 15, alignItems: "flex-end" }
+            }, [
+              React.createElement('div', { key: 'input-wrapper', style: { flex: 1 } }, [
+                React.createElement('label', {
+                  key: 'save-label',
+                  style: { display: "block", marginTop: 10, color: "#ffffff" }
+                }, "Save New Preset:"),
+                React.createElement('input', {
+                  key: 'save-input',
+                  type: "text",
+                  value: presetName,
+                  onChange: (e) => setPresetName(e.target.value),
+                  placeholder: "Preset name",
+                  style: {
+                    width: "100%",
+                    padding: 8,
+                    borderRadius: 5,
+                    border: "none",
+                    fontSize: 16,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                  }
+                })
+              ]),
+              React.createElement('button', {
+                key: 'save-button',
+                onClick: savePreset,
+                style: {
+                  padding: 8,
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  color: "#fff",
+                  backgroundColor: "#28a745",
+                  border: "none",
+                  borderRadius: 5,
+                  cursor: "pointer",
+                  marginBottom: 0,
+                  whiteSpace: "nowrap",
+                }
+              }, "Save")
+            ]),
+
+            // Description
+            React.createElement('label', {
+              key: 'desc-label',
+              style: { display: "block", marginTop: 25, color: "#ffffff" }
+            }, "Description:"),
+            React.createElement('textarea', {
+              key: 'description',
+              value: description,
+              onChange: (e) => setDescription(e.target.value),
+              placeholder: "Enter your description here...",
+              rows: 4,
+              style: {
+                width: "100%",
+                padding: 10,
+                borderRadius: 5,
+                border: "none",
+                fontSize: 16,
+                backgroundColor: "#222",
+                color: "#eee",
+                resize: "vertical",
+                marginBottom: 15,
+              }
+            }),
+
+            // Genre and Aspect Ratio
+            React.createElement('div', {
+              key: 'genre-aspect',
+              style: { display: "flex", gap: 15, marginBottom: 20 }
+            }, [
+              React.createElement('div', { key: 'genre', style: { flex: 1 } }, renderSelect("genre")),
+              React.createElement('div', { key: 'aspect', style: { flex: 1 } }, renderSelect("aspectRatio"))
+            ]),
+
+            // Cinematic Details
+            React.createElement('h2', {
+              key: 'cinematic-title',
+              style: { marginTop: 30, color: "#ffffff" }
+            }, "Cinematic Details:"),
+            renderSelect("setDesign"),
+            renderSelect("wardrobe"),
+            renderSelect("lighting"),
+            renderSelect("camera"),
+            renderSelect("lens"),
+            renderSelect("shot"),
+            renderSelect("composition"),
+            renderSelect("actor"),
+            renderSelect("emotion"),
+            renderSelect("posture"),
+            renderSelect("imperfections"),
+            renderSelect("notWanted"),
+
+            // Midjourney Parameters
+            React.createElement('h2', {
+              key: 'params-title',
+              style: { marginTop: 30, color: "#ffffff" }
+            }, "Midjourney Parameters:"),
+            React.createElement('div', {
+              key: 'params-grid',
+              style: {
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "10px",
+                marginBottom: 20,
+              }
+            }, [
+              // Chaos
+              React.createElement('div', { key: 'chaos' }, [
+                React.createElement('label', {
+                  key: 'chaos-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Chaos (--c):"),
+                React.createElement('input', {
+                  key: 'chaos-input',
+                  type: "number",
+                  min: "0",
+                  max: "100",
+                  value: form.chaos,
+                  onChange: (e) => handleChange("chaos", e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ]),
+              // Stylize
+              React.createElement('div', { key: 'stylize' }, [
+                React.createElement('label', {
+                  key: 'stylize-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Stylize (--s):"),
+                React.createElement('input', {
+                  key: 'stylize-input',
+                  type: "number",
+                  min: "0",
+                  max: "1000",
+                  value: form.stylize,
+                  onChange: (e) => handleChange("stylize", e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ]),
+              // Quality
+              React.createElement('div', { key: 'quality' }, [
+                React.createElement('label', {
+                  key: 'quality-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Quality (--q):"),
+                React.createElement('input', {
+                  key: 'quality-input',
+                  type: "number",
+                  step: "0.25",
+                  min: "0.25",
+                  max: "1",
+                  value: form.quality,
+                  onChange: (e) => handleChange("quality", e.target.value),
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ]),
+              // Seed
+              React.createElement('div', { key: 'seed' }, [
+                React.createElement('label', {
+                  key: 'seed-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Seed (--seed):"),
+                React.createElement('input', {
+                  key: 'seed-input',
+                  type: "number",
+                  value: form.seed || "",
+                  onChange: (e) => handleChange("seed", e.target.value),
+                  placeholder: "Random",
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ]),
+              // Image Weight
+              React.createElement('div', { key: 'imageWeight' }, [
+                React.createElement('label', {
+                  key: 'imageWeight-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Image Weight (--iw):"),
+                React.createElement('input', {
+                  key: 'imageWeight-input',
+                  type: "number",
+                  min: "0",
+                  max: "2",
+                  step: "0.1",
+                  value: form.imageWeight,
+                  onChange: (e) => handleChange("imageWeight", e.target.value),
+                  placeholder: "0.5",
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ]),
+              // Stop At
+              React.createElement('div', { key: 'stopEarlierAt' }, [
+                React.createElement('label', {
+                  key: 'stopEarlierAt-label',
+                  style: { fontSize: "14px", fontWeight: "bold", color: "#ffffff" }
+                }, "Stop At (--stop):"),
+                React.createElement('input', {
+                  key: 'stopEarlierAt-input',
+                  type: "number",
+                  min: "10",
+                  max: "100",
+                  value: form.stopEarlierAt || "",
+                  onChange: (e) => handleChange("stopEarlierAt", e.target.value),
+                  placeholder: "10-100",
+                  style: {
+                    width: "100%",
+                    padding: 6,
+                    borderRadius: 4,
+                    border: "none",
+                    fontSize: 14,
+                    backgroundColor: "#222",
+                    color: "#eee",
+                    marginTop: 2,
+                  }
+                })
+              ])
+            ]),
+
+            // Checkboxes
+            React.createElement('div', {
+              key: 'checkboxes',
+              style: { display: "flex", gap: 15, flexWrap: "wrap", marginBottom: 20 }
+            }, [
+              React.createElement('label', {
+                key: 'tile-checkbox',
+                style: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer", color: "#ffffff" }
+              }, [
+                React.createElement('input', {
+                  key: 'tile-input',
+                  type: "checkbox",
+                  checked: form.tile,
+                  onChange: (e) => handleChange("tile", e.target.checked),
+                  style: { width: 16, height: 16 }
+                }),
+                "Tile (--tile)"
+              ]),
+              React.createElement('label', {
+                key: 'upbeta-checkbox',
+                style: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer", color: "#ffffff" }
+              }, [
+                React.createElement('input', {
+                  key: 'upbeta-input',
+                  type: "checkbox",
+                  checked: form.upbeta,
+                  onChange: (e) => handleChange("upbeta", e.target.checked),
+                  style: { width: 16, height: 16 }
+                }),
+                "Upbeta (--upbeta)"
+              ]),
+              React.createElement('label', {
+                key: 'uplight-checkbox',
+                style: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer", color: "#ffffff" }
+              }, [
+                React.createElement('input', {
+                  key: 'uplight-input',
+                  type: "checkbox",
+                  checked: form.uplight,
+                  onChange: (e) => handleChange("uplight", e.target.checked),
+                  style: { width: 16, height: 16 }
+                }),
+                "Uplight (--uplight)"
+              ])
+            ]),
+
+            // Generate Button
+            React.createElement('button', {
+              key: 'generate-button',
+              onClick: generatePrompt,
+              style: {
+                marginTop: 20,
+                width: "100%",
+                padding: 12,
+                fontSize: 18,
+                fontWeight: "bold",
+                color: "#fff",
+                backgroundColor: "#007bff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+              }
+            }, "Generate Prompt"),
+
+            // Generated Prompt
+            prompt && React.createElement('div', {
+              key: 'prompt-section',
+              style: { marginTop: 25 }
+            }, [
+              React.createElement('div', {
+                key: 'prompt-header',
+                style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }
+              }, [
+                React.createElement('h3', {
+                  key: 'prompt-title',
+                  style: { margin: 0, flex: 1, color: "#ffffff" }
+                }, "/imagine"),
+                React.createElement('button', {
+                  key: 'copy-button',
+                  onClick: copyToClipboard,
+                  style: {
+                    padding: "8px 16px",
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    color: "#fff",
+                    backgroundColor: copySuccess ? "#28a745" : "#6c757d",
+                    border: "none",
+                    borderRadius: 5,
+                    cursor: "pointer",
+                    transition: "background-color 0.3s",
+                  }
+                }, copySuccess ? "✓ Copied!" : "Copy Prompt")
+              ]),
+              React.createElement('pre', {
+                key: 'prompt-text',
+                style: {
+                  backgroundColor: "#222",
+                  padding: 15,
+                  borderRadius: 8,
+                  fontSize: 15,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  color: "#0f0",
+                  margin: 0,
+                }
+              }, prompt)
+            ])
+          ]);
+        }
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Render the generator
+        ReactDOM.render(React.createElement(VisuraGenerator), document.getElementById('visura-generator-container'));
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+</body>
+</html>
